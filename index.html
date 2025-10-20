@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VLESS 配置批量转换工具</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f3f4f6;
+            color: #1f2937;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #1f2937;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        @media (min-width: 1024px) {
+            .grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .card {
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+        }
+
+        .card h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .textarea {
+            width: 100%;
+            height: 300px;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            font-family: monospace;
+            font-size: 0.875rem;
+            resize: vertical;
+        }
+
+        .textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background-color: #3b82f6;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background-color: #2563eb;
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background-color: #f9fafb;
+        }
+
+        .btn-success {
+            background-color: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover:not(:disabled) {
+            background-color: #059669;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .button-group .btn {
+            flex: 1;
+        }
+
+        .result-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .result-item {
+            border: 1px solid #e5e7eb;
+            border-radius: 0.375rem;
+            padding: 0.75rem;
+            background-color: #f9fafb;
+            margin-bottom: 0.75rem;
+        }
+
+        .result-index {
+            font-size: 0.75rem;
+            color: #6b7280;
+            margin-bottom: 0.25rem;
+        }
+
+        .result-link {
+            font-family: monospace;
+            font-size: 0.75rem;
+            word-break: break-all;
+            margin-bottom: 0.5rem;
+        }
+
+        .result-actions {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #6b7280;
+            padding: 2rem;
+        }
+
+        .instructions {
+            margin-top: 2rem;
+        }
+
+        .instructions ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .instructions li {
+            padding: 0.25rem 0;
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+
+        .instructions li:before {
+            content: "•";
+            color: #3b82f6;
+            font-weight: bold;
+            display: inline-block;
+            width: 1em;
+            margin-left: -1em;
+        }
+
+        .status {
+            margin-top: 1rem;
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>VLESS 配置批量转换工具</h1>
+        </div>
+
+        <div class="grid">
+            <!-- 左侧输入区域 -->
+            <div class="card">
+                <h2>配置输入</h2>
+                <textarea 
+                    id="configInput" 
+                    class="textarea" 
+                    placeholder="粘贴 JSON 配置到这里..."
+                ></textarea>
+                
+                <div class="button-group">
+                    <button id="convertBtn" class="btn btn-primary">开始转换</button>
+                    <button id="exampleBtn" class="btn btn-secondary">加载示例</button>
+                    <button id="clearBtn" class="btn btn-secondary">清空</button>
+                </div>
+            </div>
+
+            <!-- 右侧结果区域 -->
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h2>转换结果</h2>
+                    <button id="copyAllBtn" class="btn btn-success" style="display: none;">复制全部</button>
+                </div>
+                
+                <div id="resultList" class="result-list">
+                    <div class="empty-state">转换结果将显示在这里</div>
+                </div>
+                
+                <div id="status" class="status"></div>
+            </div>
+        </div>
+
+        <!-- 使用说明 -->
+        <div class="card instructions">
+            <h2>使用说明</h2>
+            <ul>
+                <li>支持单个 JSON 配置或多个配置的数组</li>
+                <li>支持 VLESS over WS/TLS 等常见配置</li>
+                <li>自动提取服务器地址、端口、UUID、路径等信息</li>
+                <li>批量复制所有生成的 VLESS 链接</li>
+                <li>纯前端转换，数据不会发送到服务器</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // 示例配置
+        const exampleConfig = `{
+  "remarks": "💦 Example - VLESS",
+  "outbounds": [
+    {
+      "protocol": "vless",
+      "settings": {
+        "vnext": [
+          {
+            "address": "example.com",
+            "port": 443,
+            "users": [
+              {
+                "id": "1498fce7-feb0-4e44-9236-f957a3495ea0",
+                "encryption": "none"
+              }
+            ]
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "ws",
+        "security": "tls",
+        "wsSettings": {
+          "host": "example.com",
+          "path": "/path"
+        }
+      }
+    }
+  ]
+}`;
+
+        // DOM 元素
+        const configInput = document.getElementById('configInput');
+        const convertBtn = document.getElementById('convertBtn');
+        const exampleBtn = document.getElementById('exampleBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const copyAllBtn = document.getElementById('copyAllBtn');
+        const resultList = document.getElementById('resultList');
+        const status = document.getElementById('status');
+
+        // 转换函数
+        function convertToVless(config) {
+            try {
+                // 检查是否是数组格式
+                const outbound = Array.isArray(config.outbounds) ? config.outbounds[0] : config.outbounds;
+                
+                if (!outbound || outbound.protocol !== 'vless') {
+                    throw new Error('不是有效的 VLESS 配置');
+                }
+
+                const vnext = outbound.settings?.vnext?.[0];
+                if (!vnext) {
+                    throw new Error('缺少 vnext 配置');
+                }
+
+                const user = vnext.users?.[0];
+                if (!user) {
+                    throw new Error('缺少用户配置');
+                }
+
+                const address = vnext.address;
+                const port = vnext.port;
+                const uuid = user.id;
+                const encryption = user.encryption || 'none';
+
+                // 提取流设置
+                const streamSettings = outbound.streamSettings || {};
+                const security = streamSettings.security || 'none';
+                const network = streamSettings.network || 'tcp';
+
+                // 构建基础链接
+                let vlessLink = `vless://${uuid}@${address}:${port}?encryption=${encryption}&security=${security}&type=${network}`;
+
+                // 添加传输协议特定参数
+                if (network === 'ws') {
+                    const wsSettings = streamSettings.wsSettings || {};
+                    const host = wsSettings.host || '';
+                    const path = wsSettings.path || '';
+                    
+                    if (host) {
+                        vlessLink += `&host=${encodeURIComponent(host)}`;
+                    }
+                    if (path) {
+                        vlessLink += `&path=${encodeURIComponent(path)}`;
+                    }
+                } else if (network === 'grpc') {
+                    const grpcSettings = streamSettings.grpcSettings || {};
+                    const serviceName = grpcSettings.serviceName || '';
+                    if (serviceName) {
+                        vlessLink += `&serviceName=${encodeURIComponent(serviceName)}`;
+                    }
+                }
+
+                // 添加 SNI (如果有)
+                if (streamSettings.tlsSettings && streamSettings.tlsSettings.serverName) {
+                    vlessLink += `&sni=${encodeURIComponent(streamSettings.tlsSettings.serverName)}`;
+                }
+
+                // 添加备注
+                const remarks = config.remarks || config.name || 'VLESS-Server';
+                vlessLink += `#${encodeURIComponent(remarks)}`;
+
+                return vlessLink;
+            } catch (error) {
+                throw new Error(`配置转换失败: ${error.message}`);
+            }
+        }
+
+        // 批量转换函数
+        function batchConvert() {
+            const inputText = configInput.value.trim();
+            
+            if (!inputText) {
+                showStatus('请输入配置内容', 'error');
+                return;
+            }
+
+            convertBtn.disabled = true;
+            convertBtn.textContent = '转换中...';
+
+            try {
+                let configData;
+                try {
+                    configData = JSON.parse(inputText);
+                } catch (parseError) {
+                    throw new Error('JSON 格式错误: ' + parseError.message);
+                }
+
+                // 处理单个配置或多个配置
+                const configs = Array.isArray(configData) ? configData : [configData];
+                const links = [];
+
+                for (const configItem of configs) {
+                    try {
+                        const vlessLink = convertToVless(configItem);
+                        if (vlessLink) {
+                            links.push(vlessLink);
+                        }
+                    } catch (error) {
+                        console.error('转换单个配置失败:', error);
+                        // 继续处理其他配置
+                    }
+                }
+
+                if (links.length === 0) {
+                    throw new Error('没有成功转换任何配置');
+                }
+
+                displayResults(links);
+                showStatus(`共 ${links.length} 个链接转换成功`, 'success');
+                
+            } catch (error) {
+                showStatus('转换失败: ' + error.message, 'error');
+            } finally {
+                convertBtn.disabled = false;
+                convertBtn.textContent = '开始转换';
+            }
+        }
+
+        // 显示结果
+        function displayResults(links) {
+            resultList.innerHTML = '';
+            
+            if (links.length === 0) {
+                resultList.innerHTML = '<div class="empty-state">转换结果将显示在这里</div>';
+                copyAllBtn.style.display = 'none';
+                return;
+            }
+
+            links.forEach((link, index) => {
+                const resultItem = document.createElement('div');
+                resultItem.className = 'result-item';
+                resultItem.innerHTML = `
+                    <div class="result-index">链接 ${index + 1}</div>
+                    <div class="result-link">${link}</div>
+                    <div class="result-actions">
+                        <button class="btn btn-primary" onclick="copyToClipboard('${link.replace(/'/g, "\\'")}')">复制</button>
+                    </div>
+                `;
+                resultList.appendChild(resultItem);
+            });
+
+            copyAllBtn.style.display = 'inline-flex';
+        }
+
+        // 复制到剪贴板
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showStatus('链接已复制到剪贴板！', 'success');
+            }).catch(() => {
+                // 降级方案
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showStatus('链接已复制到剪贴板！', 'success');
+            });
+        }
+
+        // 复制全部
+        function copyAllResults() {
+            const links = Array.from(resultList.querySelectorAll('.result-link'))
+                .map(el => el.textContent);
+            copyToClipboard(links.join('\n'));
+        }
+
+        // 显示状态信息
+        function showStatus(message, type) {
+            status.textContent = message;
+            status.style.color = type === 'error' ? '#ef4444' : type === 'success' ? '#10b981' : '#6b7280';
+        }
+
+        // 加载示例
+        function loadExample() {
+            configInput.value = exampleConfig;
+            showStatus('示例配置已加载', 'success');
+        }
+
+        // 清空
+        function clearAll() {
+            configInput.value = '';
+            resultList.innerHTML = '<div class="empty-state">转换结果将显示在这里</div>';
+            copyAllBtn.style.display = 'none';
+            showStatus('', '');
+        }
+
+        // 事件监听
+        convertBtn.addEventListener('click', batchConvert);
+        exampleBtn.addEventListener('click', loadExample);
+        clearBtn.addEventListener('click', clearAll);
+        copyAllBtn.addEventListener('click', copyAllResults);
+
+        // 使函数在全局可用
+        window.copyToClipboard = copyToClipboard;
+    </script>
+</body>
+</html>
